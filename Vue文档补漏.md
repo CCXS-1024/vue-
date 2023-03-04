@@ -87,4 +87,139 @@ watchEffect(callback, {
 
   - 手动停止监听器 watch函数会返回一个函数执行函数即可
 
-  我的束河
+### 深入组件
+
+> 组件分为全局组件和局部组件
+>
+> - 全局注册，但并没有被使用的组件无法在生产打包时被自动移除 (也叫“tree-shaking”)。如果你全局注册了一个组件，即使它并没有被实际使用，它仍然会出现在打包后的 JS 文件中。
+> - 全局注册在大型项目中使项目的依赖关系变得不那么明确。在父组件中使用子组件时，不太容易定位子组件的实现。和使用过多的全局变量一样，这可能会影响应用长期的可维护性
+
+#### Props的细节
+
+- Props名字的格式
+
+  - 如果一个props的名字很长，应该使用小驼峰的形式，因为它们是合法的js标识符可以在模板表达式使用
+  - 但是在父向子传递参数的时候一般使用  kebab-case的 形式
+
+  ~~~html
+  <MyComponent greeting-message="hello" />
+  ~~~
+
+  - 如果你想使用一个对象绑定多个prop可以使用 v-bind不带如下
+
+  ~~~html
+  <BlogPost v-bind="post" />
+  
+  <BlogPost :id="post.id" :title="post.title" />
+  ~~~
+
+- 单项数据流
+
+- props 的校验  
+
+- Boolean类型转换
+
+  - 为了更贴近原生 boolean attributes 的行为，声明为 `Boolean` 类型的 props 有特别的类型转换规则。以带有如下声明的 `<MyComponent>` 组件为例：
+
+  - ~~~html
+    defineProps({
+      disabled: Boolean
+    })
+    
+    <!-- 等同于传入 :disabled="true" -->
+    <MyComponent disabled />
+    
+    <!-- 等同于传入 :disabled="false" -->
+    <MyComponent />
+    ~~~
+
+### 组件事件
+
+> 在子组件触发的事件使用驼峰命名 但是在父组件中需要使用  kebab-case 的格式监听和props的格式差不多
+
+触发事件不仅可以传入一个函数还可以传入一个对象来进行事假校验
+
+~~~Vue
+<script setup>
+const emit = defineEmits({
+  // 没有校验
+  click: null,
+
+  // 校验 submit 事件  返回为true则通过 false 不通过
+  submit: ({ email, password }) => {
+    if (email && password) {
+      return true
+    } else {
+      console.warn('Invalid submit event payload!')
+      return false
+    }
+  }
+})
+
+function submitForm(email, password) {
+  emit('submit', { email, password })
+}
+</script>
+~~~
+
+### 在组件中使用v-model
+
+ - 默认情况下会展开成
+
+~~~html
+<CustomInput
+  :modelValue="searchText"
+  @update:modelValue="newValue => searchText = newValue"
+/>
+~~~
+
+你需要再对应的子组件中手动绑定到对应的input 中
+
+- 还用一种方式 通过计算属性来实现 子组件的绑定
+
+~~~html
+<!-- CustomInput.vue -->
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps(['modelValue'])
+const emit = defineEmits(['update:modelValue'])
+
+const value = computed({
+  get() {
+    return props.modelValue
+  },
+  set(value) {
+    emit('update:modelValue', value)
+  }
+})
+</script>
+<template>
+  <input v-model="value" />
+</template>
+~~~
+
+#### v-model 的参数
+
+> 默认情况下，v-model在组件上都是使用modelValue作为prop，并以update:modelValue作为对应的事件。我们可以通过给v-model指定一个参数来更改这些名字
+
+~~~html
+<MyComponent v-model:title="bookTitle" />
+<!-- 默认情况下-->
+
+子组件会拆分成
+<script setup>
+defineProps(['title'])
+defineEmits(['update:title'])
+</script>
+<template>
+  <input
+    type="text"
+    :value="title"
+    @input="$emit('update:title', $event.target.value)"
+  />
+</template>
+~~~
+
+- 多个v-model绑定
+  - 利用上面的v-model的参数可以在一子组件中绑定多个v-model 其组件上的v-model都会不同
