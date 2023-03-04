@@ -87,7 +87,7 @@ watchEffect(callback, {
 
   - 手动停止监听器 watch函数会返回一个函数执行函数即可
 
-### 深入组件
+## 深入组件
 
 > 组件分为全局组件和局部组件
 >
@@ -223,3 +223,80 @@ defineEmits(['update:title'])
 
 - 多个v-model绑定
   - 利用上面的v-model的参数可以在一子组件中绑定多个v-model 其组件上的v-model都会不同
+  - 看文档上面的解释
+
+- 处理v-model修饰符
+  - 自定义修饰符
+    - 可以在子组件 监听props 中 modelModifiers 这个属性默认是一个对象
+    - [文档](https://cn.vuejs.org/guide/components/v-model.html)
+
+### 事件穿透
+
+> 事件穿透默认是 子组件的根元素上
+
+- 事件穿透 class 和 style
+
+  - 这两个会合并
+
+- 禁用事件穿透
+
+  - 如果你使用了 `<script setup>`，你需要一个额外的 `<script>` 块来书写这个选项声明
+
+  - ~~~html
+    <script>
+    // 使用普通的 <script> 来声明选项
+    export default {
+      inheritAttrs: false
+    }
+    </script>
+    
+    <script setup>
+    // ...setup 部分逻辑
+    </script>
+    ~~~
+
+- 默认情况下所有穿透的信息会保存在$attrs 中
+
+- 这个 `$attrs` 对象包含了除组件所声明的 `props` 和 `emits` 之外的所有其他 attribute，例如 `class`，`style`，`v-on` 监听器等等。
+  
+
+  - 和 props 有所不同，透传 attributes 在 JavaScript 中保留了它们原始的大小写，所以像 `foo-bar` 这样的一个 attribute 需要通过 `$attrs['foo-bar']` 来访问。
+    
+  - 像 `@click` 这样的一个 `v-on` 事件监听器将在此对象下被暴露为一个函数 `$attrs.onClick`。
+
+#### 多跟节点的穿透
+
+> 和单根节点的穿透不同 多节点 需要手动绑定对应的事件 否则控制台会给警告
+
+不需要禁用事件穿透 多接点穿透
+
+可以使用 useAttrs 来在js 中访问 Attributes的值
+
+### 插槽Slots
+
+> 当一个组件同时接收默认插槽和具名插槽时，所有位于顶级的非 `<template>` 节点都被隐式地视为默认插槽的内容 
+
+#### 动态域名插槽
+
+~~~ html
+<base-layout>
+  <template v-slot:[dynamicSlotName]>
+    ...
+  </template>
+
+  <!-- 缩写为 -->
+  <template #[dynamicSlotName]>
+    ...
+  </template>
+</base-layout>
+~~~
+
+#### 作用域插槽
+
+[文档](https://cn.vuejs.org/guide/components/slots.html)
+
+### 依赖注入
+
+> 注入分为全局注入和全局注入
+>
+> 全局注册  直接在app.provide('message','hello')
